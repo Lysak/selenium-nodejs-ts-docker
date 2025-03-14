@@ -1,0 +1,13 @@
+services:
+  selenium:
+    image: selenium/standalone-chrome:latest
+    platform: linux/amd64  # Ensures the image runs emulated on Mac M1
+    ports:
+      - "4444:4444"
+
+  tests:
+    build: .
+    depends_on:
+      - selenium
+    environment:
+      - NODE_ENV=production
