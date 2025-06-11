@@ -14,7 +14,10 @@ async function run() {
         .setChromeOptions(options)
         .build();
 
-    await driver.get("https://motivation-new-tab.github.io/");
+    // const url = "https://motivation-new-tab.github.io/";
+    const url = "https://www.binance.com/en/alpha/bsc/0xc71b5f631354be6853efe9c3ab6b9590f8302e81";
+
+    await driver.get(url);
 
     // Додай потрібну логіку
 
