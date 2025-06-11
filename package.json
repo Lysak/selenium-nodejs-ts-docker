@@ -3,18 +3,22 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "ts-node src/main.ts",
+    "start:example": "ts-node src/example-automation.ts",
+    "build": "tsc",
+    "start:prod": "npm run build && node dist/binance-alpha-traider.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "cd /Users/Files/www/pet/selenium-node-ts-docker",
   "dependencies": {
-    "@types/selenium-webdriver": "^4.1.28",
-    "selenium-webdriver": "^4.29.0"
+    "selenium-webdriver": "^4.33.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "@types/selenium-webdriver": "^4.1.28",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }

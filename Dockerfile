@@ -20,5 +20,5 @@ WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 
-# Run your compiled test script
-CMD ["node", "dist/test.js"]
+# Run your compiled script
+CMD ["node", "dist/binance-alpha-traider.js"]

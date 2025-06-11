@@ -4,10 +4,24 @@ services:
     platform: linux/amd64  # Ensures the image runs emulated on Mac M1
     ports:
       - "4444:4444"
+      - "7900:7900"  # VNC port for debugging
+    shm_size: "2gb"  # Increase shared memory
+    environment:
+      - SE_NODE_MAX_SESSIONS=5
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+      - SE_VNC_NO_PASSWORD=1  # Makes VNC easier to access
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   tests:
     build: .
     depends_on:
-      - selenium
+      selenium:
+        condition: service_healthy
     environment:
       - NODE_ENV=production
+    volumes:
+      - ./src:/usr/src/app/src  # For development
