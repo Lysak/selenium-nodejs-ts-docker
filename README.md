@@ -14,3 +14,9 @@ docker-compose -f docker-compose.yml logs -f
 
 #
 docker-compose up --build
+
+#
+npm run start-test
+
+#
+npm run start

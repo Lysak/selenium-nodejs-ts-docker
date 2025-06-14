@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/main.ts",
+    "start-test": "ts-node src/test.ts",
     "start:example": "ts-node src/example-automation.ts",
     "build": "tsc",
     "start:prod": "npm run build && node dist/binance-alpha-traider.js",
