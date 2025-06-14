@@ -1,5 +1,5 @@
 import {By, until, WebDriver, Key, WebElement} from "selenium-webdriver";
-import {sleep} from '../utils/sleep';
+import {randomDelay, sleep} from '../utils/sleep';
 
 export class TraderService {
     private readonly driver: WebDriver;
@@ -18,7 +18,8 @@ export class TraderService {
         price: By.css("#limitPrice"),
         total: By.css("#limitTotal"),
         closePriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"c\"]"),
-        lowPriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"l\"]")
+        lowPriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"l\"]"),
+        isOrderOpen: By.css('.bn-web-table-tbody tr:not(.bn-web-table-measure-row) [aria-colindex="4"]')
     };
 
     constructor(driver: WebDriver, amount: number) {
@@ -79,9 +80,19 @@ export class TraderService {
     }
 
     async isOrderBuyOpen(): Promise<boolean> {
-        // This logic was previously in main.ts
-        const result = await this.getValue(this.driver, this.selectors.lowPriceValue, "isOrderBuyOpen");
+        const result = await this.getValue(this.driver, this.selectors.isOrderOpen, "isOrderBuyOpen");
+
+        console.log(result, `"lysak"`);
+
         return result === 'Buy';
+    }
+
+    async isOrderSellOpen(): Promise<boolean> {
+        const result = await this.getValue(this.driver, this.selectors.isOrderOpen, "isOrderSellOpen");
+
+        console.log(result, `"lysak"`);
+
+        return result === 'Sell';
     }
 
     getSymmetricPricePairs(basePrice: number, high: number, low: number) {
@@ -157,11 +168,13 @@ export class TraderService {
 
             await driver.wait(until.elementIsVisible(element), this.DELAY);
 
+            await sleep(1000);
+
             await this.clearInput(element);
 
             for (const char of value.split('')) {
                 await element.sendKeys(char);
-                await sleep(Math.random() * 100 + 50);
+                await sleep(randomDelay(50, 150));
             }
             console.log(`Typed ${value} into ${label || 'field'}`);
             await sleep(1000);
