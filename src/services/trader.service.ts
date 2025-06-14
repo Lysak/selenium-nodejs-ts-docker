@@ -1,5 +1,6 @@
 import {By, until, WebDriver, Key, WebElement} from "selenium-webdriver";
 import {randomDelay, sleep} from '../utils/sleep';
+import {getSymmetricPricePairs} from "../utils/trader";
 
 export class TraderService {
     private readonly driver: WebDriver;
@@ -8,7 +9,7 @@ export class TraderService {
 
     private DELAY = 1000;
 
-    private selectors = {
+    public selectors = {
         limitButton: By.css("#bn-tab-LIMIT"),
         instantButton: By.css("#bn-tab-INSTANT"),
         buySectionButton: By.css(".bn-tabs.bn-tabs__buySell #bn-tab-0"),
@@ -40,7 +41,7 @@ export class TraderService {
                 throw new Error('no price')
             }
 
-            const discountedPrices = this.getSymmetricPricePairs(price, 0, 0);
+            const discountedPrices = getSymmetricPricePairs(price, 0, 0);
 
             console.log(discountedPrices, `"lysak"`);
 
@@ -91,47 +92,6 @@ export class TraderService {
         console.log(result, `"lysak"`);
 
         return result === 'Sell';
-    }
-
-    getSymmetricPricePairs(basePrice: number, high: number, low: number) {
-        const startPct = 0.00005;  // 0.005%
-        const endPct = 0.00075;   // 0.075%
-        const step = 0.00005;     // 0.005%
-
-        const truncate5 = (n: number): number => Number(n.toFixed(5));
-
-        const midPrice = (high: number, low: number): number =>
-            truncate5((high + low) / 2);
-
-        const percentLabel = (p: number): string =>
-            `${p >= 0 ? '+' : ''}${(p * 100).toFixed(3)}%`;
-
-        const negatives: [string, number][] = [];
-        const positives: [string, number][] = [];
-
-        for (let pct = startPct; pct <= endPct; pct += step) {
-            negatives.push([percentLabel(-pct), truncate5(basePrice * (1 - pct))]);
-            positives.push([percentLabel(pct), truncate5(basePrice * (1 + pct))]);
-        }
-
-        negatives.sort(([a], [b]) => parseFloat(b) - parseFloat(a));
-
-        const combined: [string, number][] = [
-            ...negatives,
-            ['-0.000%', 0],
-            ...positives
-        ];
-
-        const pairs: { [key: string]: number } = {};
-        for (const [label, value] of combined) {
-            pairs[label] = value;
-        }
-
-        return {
-            midPrice: midPrice(high, low),
-            basePrice: truncate5(basePrice),
-            pairs
-        };
     }
 
     async getValue(driver: WebDriver, selector: By, label = ""): Promise<string> {

@@ -4,6 +4,7 @@ import {Options} from "selenium-webdriver/chrome";
 import path from "path";
 import {TraderService} from "./services/trader.service";
 import {sleep} from './utils/sleep';
+import {getSymmetricPricePairs} from "./utils/trader";
 
 const entirePageUrl = 'https://www.binance.com/en/alpha/bsc/0xc71b5f631354be6853efe9c3ab6b9590f8302e81';
 
@@ -36,8 +37,17 @@ async function main() {
         await trader.init();
 
         while (await trader.isOrderBuyOpen()) {
-            console.log(1000, `"lysak sleep isOrderBuyOpen"`);
-            await sleep(1000); // Check every minute
+            console.log(1000*10, `"lysak sleep isOrderBuyOpen"`);
+
+            const price = await trader.getClosePriceValue(driver, trader.selectors.lowPriceValue, "Price Input" + " (getClosePriceValue)");
+
+            if (price) {
+                const discountedPrices = getSymmetricPricePairs(price, 0, 0);
+
+                console.log(discountedPrices, `"lysak"`);
+            }
+
+            await sleep(1000*10); // Check every minute
         }
 
         console.log('sold', `"lysak"`);
