@@ -32,24 +32,22 @@ export class TraderService {
     }
 
     private async getIdealPrice() {
-        if (0) {
+        if (1) {
             const price = await this.getClosePriceValue(this.driver, this.selectors.lowPriceValue, "Price Input" + " (getClosePriceValue)");
 
             if (!price) {
+                console.log('no price', `"lysak"`);
                 throw new Error('no price')
             }
 
-            console.log(price, `"lysak price"`);
-            console.log(+price, `"lysak +price"`);
-
-            const discountedPrices = this.getSymmetricPricePairs(+price, 0, 0);
+            const discountedPrices = this.getSymmetricPricePairs(price, 0, 0);
 
             console.log(discountedPrices, `"lysak"`);
 
             const idealPrice = discountedPrices.pairs['-0.045%'] ?? 0;
             console.log(idealPrice, `"lysak idealPrice"`);
-
-            return +idealPrice;
+            //TODO: debug temp
+            // return +idealPrice;
         }
 
         return +'2.00942';
@@ -96,43 +94,38 @@ export class TraderService {
     }
 
     getSymmetricPricePairs(basePrice: number, high: number, low: number) {
-        const startPct = 0.0002;  // 0.02%
-        const endPct = 0.0008;    // 0.08%
+        const startPct = 0.00005;  // 0.005%
+        const endPct = 0.00075;   // 0.075%
         const step = 0.00005;     // 0.005%
 
         const truncate5 = (n: number): number => Number(n.toFixed(5));
 
-        const midPrice = (high: number, low: number): number => {
-            const result = (high + low) / 2;
-            return Number(result.toFixed(5));
-        };
+        const midPrice = (high: number, low: number): number =>
+            truncate5((high + low) / 2);
 
         const percentLabel = (p: number): string =>
             `${p >= 0 ? '+' : ''}${(p * 100).toFixed(3)}%`;
 
-        // Temporary storage for paired values
-        const tempPairs: [string, number][] = [];
+        const negatives: [string, number][] = [];
+        const positives: [string, number][] = [];
 
-        // Use the specified step pattern for increments
         for (let pct = startPct; pct <= endPct; pct += step) {
-            const plus = truncate5(basePrice * (1 + pct));
-            const minus = truncate5(basePrice * (1 - pct));
-
-            tempPairs.push([percentLabel(pct), plus]);
-            tempPairs.push([percentLabel(-pct), minus]);
+            negatives.push([percentLabel(-pct), truncate5(basePrice * (1 - pct))]);
+            positives.push([percentLabel(pct), truncate5(basePrice * (1 + pct))]);
         }
 
-        // Sort the array by percentage values (as numbers from negative to positive)
-        tempPairs.sort(([labelA], [labelB]) => {
-            const percentageToNumber = (label: string) => parseFloat(label.replace('%', ''));
-            return percentageToNumber(labelA) - percentageToNumber(labelB);
-        });
+        negatives.sort(([a], [b]) => parseFloat(b) - parseFloat(a));
 
-        // Create a hashmap of sorted pairs
+        const combined: [string, number][] = [
+            ...negatives,
+            ['-0.000%', 0],
+            ...positives
+        ];
+
         const pairs: { [key: string]: number } = {};
-        tempPairs.forEach(([label, value]) => {
+        for (const [label, value] of combined) {
             pairs[label] = value;
-        });
+        }
 
         return {
             midPrice: midPrice(high, low),
