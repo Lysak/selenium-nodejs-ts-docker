@@ -36,21 +36,26 @@ async function main() {
         const trader = new TraderService(driver, AMOUNT);
         await trader.init();
 
-        while (await trader.isOrderBuyOpen()) {
-            console.log(1000*10, `"lysak sleep isOrderBuyOpen"`);
+        while (/*await trader.isOrderBuyOpen() ||*/ 1) {
+            //TODO: refresh page
 
             const price = await trader.getClosePriceValue(driver, trader.selectors.lowPriceValue, "Price Input" + " (getClosePriceValue)");
 
+            console.log(price, `"lysak price"`);
+
             if (price) {
                 const discountedPrices = getSymmetricPricePairs(price, 0, 0);
+                // console.log(discountedPrices, `"lysak"`);
 
-                console.log(discountedPrices, `"lysak"`);
+                const idealPrice = discountedPrices.pairs['-0.045%'] ?? 0;
+                console.log(idealPrice, `"lysak idealPrice"`);
             }
 
-            await sleep(1000*10); // Check every minute
+            console.log(1000*7, `"lysak sleep isOrderBuyOpen"`);
+            await sleep(1000*7); // Check every 7 sec
         }
 
-        console.log('sold', `"lysak"`);
+        console.log('sold', `"lysak sold"`);
 
         // Example of running actions
         await trader.buyAction();

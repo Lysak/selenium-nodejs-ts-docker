@@ -37,16 +37,16 @@ export class TraderService {
             const price = await this.getClosePriceValue(this.driver, this.selectors.lowPriceValue, "Price Input" + " (getClosePriceValue)");
 
             if (!price) {
-                console.log('no price', `"lysak"`);
+                console.log('no price', `"lysak no price"`);
                 throw new Error('no price')
             }
 
             const discountedPrices = getSymmetricPricePairs(price, 0, 0);
 
-            console.log(discountedPrices, `"lysak"`);
+            console.log(discountedPrices, `"lysak discountedPrices"`);
 
             const idealPrice = discountedPrices.pairs['-0.045%'] ?? 0;
-            console.log(idealPrice, `"lysak idealPrice"`);
+            console.log(idealPrice, `"lysak idealPrice 2"`);
             //TODO: debug temp
             // return +idealPrice;
         }
@@ -58,8 +58,6 @@ export class TraderService {
         await this.click(this.driver, this.selectors.buySectionButton, "Buy Tab");
 
         await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
-        // await this.click(this.driver, this.selectors.instantButton, "Instant Tab");
-        // await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
 
         await this.typeIntoField(this.driver, this.selectors.price, this.PRICE.toString(), "Price Input buyAction");
         await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input buyAction");
@@ -70,8 +68,6 @@ export class TraderService {
         await this.click(this.driver, this.selectors.sellSectionButton, "Sell Tab");
 
         await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
-        // await this.click(this.driver, this.selectors.instantButton, "Instant Tab");
-        // await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
 
         await this.typeIntoField(this.driver, this.selectors.price, this.PRICE.toString(), "Price Input sellAction");
         await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input sellAction");
@@ -79,24 +75,34 @@ export class TraderService {
     }
 
     async isOrderBuyOpen(): Promise<boolean> {
-        const result = await this.getValue(this.driver, this.selectors.isOrderOpen, "isOrderBuyOpen");
+        try {
+            const result = await this.getValue(this.driver, this.selectors.isOrderOpen, "isOrderBuyOpen");
 
-        console.log(result, `"lysak"`);
+            console.log(result, `"lysak result"`);
 
-        return result === 'Buy';
+            return result === 'Buy';
+        } catch (err) {
+            console.log(err, `"lysak err"`);
+            return false;
+        }
     }
 
     async isOrderSellOpen(): Promise<boolean> {
-        const result = await this.getValue(this.driver, this.selectors.isOrderOpen, "isOrderSellOpen");
+        try {
+            const result = await this.getValue(this.driver, this.selectors.isOrderOpen, "isOrderBuyOpen");
 
-        console.log(result, `"lysak"`);
+            console.log(result, `"lysak result"`);
 
-        return result === 'Sell';
+            return result === 'Sell';
+        } catch (err) {
+            console.log(err, `"lysak err"`);
+            return false;
+        }
     }
 
     async getValue(driver: WebDriver, selector: By, label = ""): Promise<string> {
         try {
-            const element = await driver.wait(until.elementLocated(selector), this.DELAY);
+            const element = await driver.wait(until.elementLocated(selector), this.DELAY*5);
             const value = await element.getText();
             await sleep(1000);
             return value;
