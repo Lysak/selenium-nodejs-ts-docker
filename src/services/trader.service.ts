@@ -20,7 +20,8 @@ export class TraderService {
         total: By.css("#limitTotal"),
         closePriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"c\"]"),
         lowPriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"l\"]"),
-        isOrderOpen: By.css('.bn-web-table-tbody tr:not(.bn-web-table-measure-row) [aria-colindex="4"]')
+        isOrderOpen: By.css('.bn-web-table-tbody tr:not(.bn-web-table-measure-row) [aria-colindex="4"]'),
+        slider: By.css('.bn-slider-wrapper input[role="slider"]'),
     };
 
     constructor(driver: WebDriver, amount: number) {
@@ -60,7 +61,10 @@ export class TraderService {
         await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
 
         await this.typeIntoField(this.driver, this.selectors.price, this.PRICE.toString(), "Price Input buyAction");
-        await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input buyAction");
+
+        await this.dragSliderTo100(this.driver, this.selectors.slider)
+
+        // await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input buyAction");
         console.log("Buy action completed");
     }
 
@@ -70,7 +74,8 @@ export class TraderService {
         await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
 
         await this.typeIntoField(this.driver, this.selectors.price, this.PRICE.toString(), "Price Input sellAction");
-        await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input sellAction");
+        await this.dragSliderTo100(this.driver, this.selectors.slider)
+        // await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input sellAction");
         console.log("Sell action completed");
     }
 
@@ -133,7 +138,7 @@ export class TraderService {
 
             for (const char of value.split('')) {
                 await element.sendKeys(char);
-                await sleep(randomDelay(50, 150));
+                await sleep(randomDelay(25, 50), 0, 0);
             }
             console.log(`Typed ${value} into ${label || 'field'}`);
             await sleep(1000);
@@ -158,5 +163,80 @@ export class TraderService {
         console.log(`Клік по: ${label}`);
         await el.click();
         await sleep(wait);
+    }
+
+
+    async dragSliderTo100(driver: WebDriver, sliderSelector: By) {
+        const slider = await driver.wait(until.elementLocated(sliderSelector), 5000);
+        await driver.wait(until.elementIsVisible(slider), 5000);
+        await driver.wait(until.elementIsEnabled(slider), 5000);
+
+        const rect = await slider.getRect();
+        console.log("Slider rect:", rect);
+
+        const actions = driver.actions({ async: true });
+
+        // Виправлено: обережно переміщаємося до правої межі
+        actions
+            .move({origin: slider, x: 0, y: rect.height / 2}) // старт з самого початку
+            .press();
+
+        // Рухаємо поетапно, щоб уникнути out-of-bounds
+        const step = 60;
+        const totalSteps = Math.floor(rect.width / step);
+        for (let i = 0; i < totalSteps; i++) {
+            actions.move({origin: slider, x: step, y: 0});
+        }
+
+        await actions.release().perform();
+
+        console.log("Slider dragged in steps to ~100%");
+    }
+
+    async dragSliderTo1002(driver: WebDriver, sliderSelector: By) {
+        const slider = await driver.wait(until.elementLocated(sliderSelector), 5000);
+        await driver.wait(until.elementIsVisible(slider), 5000);
+        await driver.wait(until.elementIsEnabled(slider), 5000);
+
+        const rect = await slider.getRect();
+        console.log("Slider rect:", rect);
+
+        const actions = driver.actions({ async: true });
+
+        const centerY = Math.floor(rect.height / 2);
+        const totalDistance = Math.floor(rect.width * 0.95); // avoid max edge (out-of-bounds)
+
+        const step = 20;
+        let moved = 0;
+
+        actions.move({ origin: slider, x: 0, y: centerY }).press();
+
+        while (moved < totalDistance) {
+            moved += step;
+            actions.move({ x: step, y: 0 }); // no origin = move from the current pointer position
+        }
+
+        await actions.release().perform();
+
+        console.log("Slider dragged incrementally to ~100%");
+    }
+
+    async setSliderTo100(driver: WebDriver, sliderSelector: By) {
+        const slider = await driver.wait(until.elementLocated(sliderSelector), 5000);
+        await driver.wait(until.elementIsVisible(slider), 5000);
+
+        await driver.executeScript(`
+        const input = arguments[0];
+        input.value = 80;
+
+        // Викликаємо події, щоб фронт побачив зміну
+        const inputEvent = new Event('input', { bubbles: true });
+        const changeEvent = new Event('change', { bubbles: true });
+
+        input.dispatchEvent(inputEvent);
+        input.dispatchEvent(changeEvent);
+    `, slider);
+
+        console.log("Slider set to 100% via JS");
     }
 }
