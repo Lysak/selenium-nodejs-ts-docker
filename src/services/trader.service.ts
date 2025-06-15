@@ -21,7 +21,7 @@ export class TraderService {
         closePriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"c\"]"),
         lowPriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"l\"]"),
         isOrderOpen: By.css('.bn-web-table-tbody tr:not(.bn-web-table-measure-row) [aria-colindex="4"]'),
-        slider: By.css('.bn-slider-wrapper input[role="slider"]'),
+        slider: By.css('.bn-slider'),
     };
 
     constructor(driver: WebDriver, amount: number) {
@@ -68,16 +68,16 @@ export class TraderService {
         console.log("Buy action completed");
     }
 
-    async sellAction() {
-        await this.click(this.driver, this.selectors.sellSectionButton, "Sell Tab");
-
-        await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
-
-        await this.typeIntoField(this.driver, this.selectors.price, this.PRICE.toString(), "Price Input sellAction");
-        await this.dragSliderTo100(this.driver, this.selectors.slider)
-        // await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input sellAction");
-        console.log("Sell action completed");
-    }
+    // async sellAction() {
+    //     await this.click(this.driver, this.selectors.sellSectionButton, "Sell Tab");
+    //
+    //     await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
+    //
+    //     await this.typeIntoField(this.driver, this.selectors.price, this.PRICE.toString(), "Price Input sellAction");
+    //     await this.clickOnSliderTrackAt100(this.driver, this.selectors.slider)
+    //     // await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input sellAction");
+    //     console.log("Sell action completed");
+    // }
 
     async isOrderBuyOpen(): Promise<boolean> {
         try {
@@ -109,7 +109,7 @@ export class TraderService {
         try {
             const element = await driver.wait(until.elementLocated(selector), this.DELAY*5);
             const value = await element.getText();
-            await sleep(1000);
+            await sleep(this.DELAY);
             return value;
         } catch (err) {
             console.error(`Error getting from ${label || 'label'}:`, err);
@@ -132,7 +132,7 @@ export class TraderService {
 
             await driver.wait(until.elementIsVisible(element), this.DELAY);
 
-            await sleep(1000);
+            await sleep(this.DELAY);
 
             await this.clearInput(element);
 
@@ -141,7 +141,7 @@ export class TraderService {
                 await sleep(randomDelay(25, 50), 0, 0);
             }
             console.log(`Typed ${value} into ${label || 'field'}`);
-            await sleep(1000);
+            await sleep(this.DELAY);
         } catch (err) {
             console.error(`Error typing into ${label || 'field'}:`, err);
         }
@@ -157,7 +157,7 @@ export class TraderService {
         }
     }
 
-    async click(driver: WebDriver, selector: By, label = "", wait = 3000) {
+    async click(driver: WebDriver, selector: By, label = "", wait = this.DELAY) {
         const el = await driver.wait(until.elementLocated(selector), this.DELAY);
         await driver.wait(until.elementIsVisible(el), this.DELAY);
         console.log(`Клік по: ${label}`);
@@ -165,78 +165,22 @@ export class TraderService {
         await sleep(wait);
     }
 
-
     async dragSliderTo100(driver: WebDriver, sliderSelector: By) {
-        const slider = await driver.wait(until.elementLocated(sliderSelector), 5000);
-        await driver.wait(until.elementIsVisible(slider), 5000);
-        await driver.wait(until.elementIsEnabled(slider), 5000);
+        const slider = await driver.wait(until.elementLocated(sliderSelector), this.DELAY);
+        await driver.wait(until.elementIsVisible(slider), this.DELAY);
+        await driver.wait(until.elementIsEnabled(slider), this.DELAY);
 
         const rect = await slider.getRect();
-        console.log("Slider rect:", rect);
 
-        const actions = driver.actions({ async: true });
+        const safeX = rect.width / 2;
+        const safeY = Math.floor(rect.height / 2); // = 5
 
-        // Виправлено: обережно переміщаємося до правої межі
-        actions
-            .move({origin: slider, x: 0, y: rect.height / 2}) // старт з самого початку
-            .press();
+        await driver.actions({ async: true })
+            .move({ origin: slider, x: rect.width/2, y: safeY }) // 360, 5
+            .press()
+            .release()
+            .perform();
 
-        // Рухаємо поетапно, щоб уникнути out-of-bounds
-        const step = 60;
-        const totalSteps = Math.floor(rect.width / step);
-        for (let i = 0; i < totalSteps; i++) {
-            actions.move({origin: slider, x: step, y: 0});
-        }
-
-        await actions.release().perform();
-
-        console.log("Slider dragged in steps to ~100%");
-    }
-
-    async dragSliderTo1002(driver: WebDriver, sliderSelector: By) {
-        const slider = await driver.wait(until.elementLocated(sliderSelector), 5000);
-        await driver.wait(until.elementIsVisible(slider), 5000);
-        await driver.wait(until.elementIsEnabled(slider), 5000);
-
-        const rect = await slider.getRect();
-        console.log("Slider rect:", rect);
-
-        const actions = driver.actions({ async: true });
-
-        const centerY = Math.floor(rect.height / 2);
-        const totalDistance = Math.floor(rect.width * 0.95); // avoid max edge (out-of-bounds)
-
-        const step = 20;
-        let moved = 0;
-
-        actions.move({ origin: slider, x: 0, y: centerY }).press();
-
-        while (moved < totalDistance) {
-            moved += step;
-            actions.move({ x: step, y: 0 }); // no origin = move from the current pointer position
-        }
-
-        await actions.release().perform();
-
-        console.log("Slider dragged incrementally to ~100%");
-    }
-
-    async setSliderTo100(driver: WebDriver, sliderSelector: By) {
-        const slider = await driver.wait(until.elementLocated(sliderSelector), 5000);
-        await driver.wait(until.elementIsVisible(slider), 5000);
-
-        await driver.executeScript(`
-        const input = arguments[0];
-        input.value = 80;
-
-        // Викликаємо події, щоб фронт побачив зміну
-        const inputEvent = new Event('input', { bubbles: true });
-        const changeEvent = new Event('change', { bubbles: true });
-
-        input.dispatchEvent(inputEvent);
-        input.dispatchEvent(changeEvent);
-    `, slider);
-
-        console.log("Slider set to 100% via JS");
+        console.log("Slider clicked at ~100%");
     }
 }
