@@ -1,28 +1,14 @@
 import {By, until, WebDriver, Key, WebElement} from "selenium-webdriver";
 import {randomDelay, sleep} from '../utils/sleep';
-import {getSymmetricPricePairs} from "../utils/trader";
+import {getAdjustedPriceInfo} from "../utils/trader";
+import {selectors} from "../utils/selectors";
 
 export class TraderService {
-    private readonly driver: WebDriver;
-    private PRICE: number = 0;
-    private readonly AMOUNT: number = 0;
+    public readonly driver: WebDriver;
+    public PRICE: number = 0;
+    public readonly AMOUNT: number = 0;
 
-    private DELAY = 1000;
-
-    public selectors = {
-        limitButton: By.css("#bn-tab-LIMIT"),
-        instantButton: By.css("#bn-tab-INSTANT"),
-        buySectionButton: By.css(".bn-tabs.bn-tabs__buySell #bn-tab-0"),
-        sellSectionButton: By.css(".bn-tabs.bn-tabs__buySell #bn-tab-1"),
-        buyButton: By.css("button[data-bn-type='submit'][class*='Buy']"),
-        sellButton: By.css("button[data-bn-type='submit'][class*='Sell']"),
-        price: By.css("#limitPrice"),
-        total: By.css("#limitTotal"),
-        closePriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"c\"]"),
-        lowPriceValue: By.css(".chart-title-row .chart-title-indicator-container .default-label-box[key=\"l\"]"),
-        isOrderOpen: By.css('.bn-web-table-tbody tr:not(.bn-web-table-measure-row) [aria-colindex="4"]'),
-        slider: By.css('.bn-slider'),
-    };
+    public DELAY = 1000;
 
     constructor(driver: WebDriver, amount: number) {
         this.driver = driver;
@@ -30,58 +16,64 @@ export class TraderService {
     }
 
     async init() {
-        this.PRICE = await this.getIdealPrice();
+        // this.PRICE = await this.getIdealPrice();
     }
 
-    private async getIdealPrice() {
-        if (1) {
-            const price = await this.getClosePriceValue(this.driver, this.selectors.lowPriceValue, "Price Input" + " (getClosePriceValue)");
-
-            if (!price) {
-                console.log('no price', `"lysak no price"`);
-                throw new Error('no price')
-            }
-
-            const discountedPrices = getSymmetricPricePairs(price, 0, 0);
-
-            console.log(discountedPrices, `"lysak discountedPrices"`);
-
-            const idealPrice = discountedPrices.pairs['-0.045%'] ?? 0;
-            console.log(idealPrice, `"lysak idealPrice 2"`);
-            //TODO: debug temp
-            // return +idealPrice;
-        }
-
-        return +'2.00942';
-    }
+    // private async getIdealPrice() {
+    //     // if (1) {
+    //     //     const closePrice = await this.getClosePriceValue();
+    //     //     const lowPrice = await this.getLowPriceValue();
+    //     //     const highPrice = await this.getHighPriceValue();
+    //     //
+    //     //     const percent = '-0.005';
+    //     //
+    //     //     if (!closePrice) {
+    //     //         console.log('no closePrice', `"lysak no closePrice"`);
+    //     //         throw new Error('no closePrice')
+    //     //     }
+    //     //
+    //     //     const discountedPrices = getAdjustedPriceInfo(closePrice, lowPrice, highPrice, percent);
+    //     //
+    //     //     console.log(discountedPrices, `"lysak discountedPrices"`);
+    //     //
+    //     //     //
+    //     //     //
+    //     //     // const idealPrice = discountedPrices.pairs[percent] ?? 0;
+    //     //     // console.log(idealPrice, `"lysak idealPrice 2"`);
+    //     //     //TODO: debug temp
+    //     //     // return +idealPrice;
+    //     // }
+    //
+    //     // return +'2.00942';
+    // }
 
     async buyAction() {
-        await this.click(this.driver, this.selectors.buySectionButton, "Buy Tab");
+        await this.click(this.driver, selectors.buySectionButton, "Buy Tab");
 
-        await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
+        await this.click(this.driver, selectors.limitButton, "Limit Tab");
 
-        await this.typeIntoField(this.driver, this.selectors.price, this.PRICE.toString(), "Price Input buyAction");
+        await this.typeIntoField(this.driver, selectors.price, this.PRICE.toString(), "Price Input buyAction");
 
-        await this.dragSliderTo100(this.driver, this.selectors.slider)
+        await this.dragSliderTo100(this.driver, selectors.slider)
 
-        // await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input buyAction");
         console.log("Buy action completed");
     }
 
-    // async sellAction() {
-    //     await this.click(this.driver, this.selectors.sellSectionButton, "Sell Tab");
-    //
-    //     await this.click(this.driver, this.selectors.limitButton, "Limit Tab");
-    //
-    //     await this.typeIntoField(this.driver, this.selectors.price, this.PRICE.toString(), "Price Input sellAction");
-    //     await this.clickOnSliderTrackAt100(this.driver, this.selectors.slider)
-    //     // await this.typeIntoField(this.driver, this.selectors.total, this.AMOUNT.toString(), "Total Input sellAction");
-    //     console.log("Sell action completed");
-    // }
+    async sellAction() {
+        await this.click(this.driver, selectors.sellSectionButton, "Sell Tab");
+
+        await this.click(this.driver, selectors.limitButton, "Limit Tab");
+
+        await this.typeIntoField(this.driver, selectors.price, this.PRICE.toString(), "Price Input sellAction");
+
+        await this.dragSliderTo100(this.driver, selectors.slider)
+
+        console.log("Sell action completed");
+    }
 
     async isOrderBuyOpen(): Promise<boolean> {
         try {
-            const result = await this.getValue(this.driver, this.selectors.isOrderOpen, "isOrderBuyOpen");
+            const result = await this.getValue(this.driver, selectors.isOrderOpen, "isOrderBuyOpen");
 
             console.log(result, `"lysak result"`);
 
@@ -94,7 +86,7 @@ export class TraderService {
 
     async isOrderSellOpen(): Promise<boolean> {
         try {
-            const result = await this.getValue(this.driver, this.selectors.isOrderOpen, "isOrderBuyOpen");
+            const result = await this.getValue(this.driver, selectors.isOrderOpen, "isOrderBuyOpen");
 
             console.log(result, `"lysak result"`);
 
@@ -117,12 +109,43 @@ export class TraderService {
         }
     }
 
-    async getClosePriceValue(driver: WebDriver, selector: By, label = ""): Promise<number | null> {
+    async getOpenPriceValue(): Promise<number> {
+        const label = "Price Input" + " (getHighPriceValue)"
         try {
-            return +await this.getValue(driver, selector, label);
+            return +await this.getValue(this.driver, selectors.openPriceValue, label);
         } catch (err) {
             console.error(`Error getting from ${label || 'label'}:`, err);
-            return null;
+            return 0;
+        }
+    }
+
+    async getClosePriceValue(): Promise<number> {
+        const label = "Price Input" + " (getClosePriceValue)"
+        try {
+            return +await this.getValue(this.driver, selectors.closePriceValue, label);
+        } catch (err) {
+            console.error(`Error getting from ${label || 'label'}:`, err);
+            return 0;
+        }
+    }
+
+    async getLowPriceValue(): Promise<number> {
+        const label = "Price Input" + " (getLowPriceValue)"
+        try {
+            return +await this.getValue(this.driver, selectors.lowPriceValue, label);
+        } catch (err) {
+            console.error(`Error getting from ${label || 'label'}:`, err);
+            return 0;
+        }
+    }
+
+    async getHighPriceValue(): Promise<number> {
+        const label = "Price Input" + " (getHighPriceValue)"
+        try {
+            return +await this.getValue(this.driver, selectors.highPriceValue, label);
+        } catch (err) {
+            console.error(`Error getting from ${label || 'label'}:`, err);
+            return 0;
         }
     }
 
